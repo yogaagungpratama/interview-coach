@@ -128,6 +128,10 @@ button.act,.seg button{min-height:44px;touch-action:manipulation}
  .q{font-size:30px}
  #card #ans{font-size:19px}
 }
+
+a.act{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;font:inherit;font-size:14px;min-height:44px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+.act.primary,a.act.primary{background:var(--violet);color:#14102a;border-color:var(--violet);font-weight:700}
+#aiBox .ans{font-size:16px;line-height:1.7;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -433,8 +437,9 @@ function showRes2(){
  if(strong)return;
  var F=frameworkFor(q),h='<div class="oom"><h3>Di luar materi: '+esc(F.h)+'</h3><div class="hint">Ini kerangka jawaban, bukan jawaban jadi. Isi dengan pengalaman nyata Anda.</div><ol>';
  F.s.forEach(function(x){h+='<li>'+esc(x)+'</li>'});
- h+='</ol><div class="hint">'+esc(F.n)+'</div><div class="bar" style="margin-top:10px"><button class="act" id="saveQ">Simpan pertanyaan ini</button></div><div class="hint" id="saveStat" role="status"></div></div>';
+ h+='</ol><div class="hint">'+esc(F.n)+'</div><div class="bar" style="margin-top:10px"><button class="act" id="saveQ">Simpan pertanyaan ini</button></div><div class="hint" id="saveStat" role="status"></div><div id="aiRow" class="bar" style="margin-top:10px"></div><div id="aiBox"></div></div>';
  $('oom').innerHTML=h;
+ setupAI(q);
  $('saveQ').onclick=function(){if(saved.indexOf(q)<0){saved.push(q);persistSaved();renderSaved()}$('saveStat').textContent='Tersimpan. Buka "Pertanyaan baru yang Anda simpan" di bawah untuk menyalinnya.'};
 }
 function showRes(){showRes2()}
@@ -447,6 +452,46 @@ $('copySaved').onclick=function(){var txt=saved.length?('Tolong buatkan jawaban 
  try{navigator.clipboard.writeText(txt).then(function(){$('copyStat').textContent='Disalin. Tempel ke chat Claude.'},fb)}catch(e){fb()}};
 renderSaved();
 $('lang').addEventListener('click',function(){setVL(L==='en'?'en-US':'id-ID')});
+
+/* ---------- Claude answer for questions outside the material ---------- */
+var aiCtl=null, aiAuto=false;
+var samplePromise=(window.claude&&typeof window.claude.use==='function')?window.claude.use('sample').catch(function(){return null}):Promise.resolve(null);
+var PROFILE=[
+ 'Nama: Yoga Agung Pratama Putra, IT Support Engineer (jaringan, hardware, infrastruktur), Bekasi.',
+ 'Pendidikan: S1 Sistem Komputer (Universitas Gunadarma, IPK 3,01); S2 Manajemen Bisnis sedang berjalan (Universitas Pertiwi). Sertifikat: MikroTik MTCNA (Okt 2024); TOEFL Prediction 504 (Sep 2026).',
+ 'PT Persona Prima Utama (Des 2024 sampai sekarang), Support Engineer Networking & Hardware: memasang, mengonfigurasi, merawat jaringan dan hardware; menganalisis dan menyelesaikan gangguan; memantau performa infrastruktur; mendokumentasikan tindak lanjut; mendukung aplikasi C-Icare untuk Call Center Telesales BSI; membantu instalasi hardware untuk klien; menyusun manual pelatihan; mengoordinasikan upgrade dan penggantian hardware; menangani masalah hardware dengan downtime minimal.',
+ 'PT DSW Tax Consultant (Mei 2022 sampai Mei 2023), IT Administrator: mengelola jaringan dan server, dukungan IT harian, menyiapkan dokumen operasional (penawaran, invoice, company profile).',
+ 'Perangkat: MikroTik MikroBits Dinara (RouterOS Level 5); switch Cisco SG550X-48P (managed, 48 port) dan SG95-24; switch TP-Link TL-SG1024D, TL-SG1016D, TL-SG108 (unmanaged); access point UniFi U7 Lite (Wi-Fi 7, dual band); server Dell PowerEdge R220 dan R430; server Linux Ubuntu.',
+ 'Tools dan proyek: aplikasi helpdesk internal untuk tiket; aplikasi monitoring email buatan sendiri (Python, cPanel UAPI, Telegram, Tailscale, Ubuntu Server) dengan tahapan SDLC: kebutuhan, desain, pembuatan, pengujian, deploy, perawatan.',
+ 'Target: posisi IT Support Specialist - Infrastructure di perusahaan fintech (switch, access point, firewall dasar, troubleshooting terstruktur, dokumentasi, ticketing, eskalasi ke L2, kadang kerja di luar jam).'
+].join('\n');
+function styleFor(){return L==='en'?'English profesional':(L==='id'?'Bahasa Indonesia yang sopan dan profesional':'campuran Indonesia dan Inggris yang profesional: struktur kalimat Indonesia, istilah teknis dalam bahasa Inggris, tetap sopan memakai "saya"')}
+function buildPrompt(q){
+ return 'Kamu pelatih wawancara kerja untuk Yoga. Tulis CONTOH jawaban latihan untuk pertanyaan di bawah, diucapkan orang pertama sebagai Yoga.\n\nAturan:\n- Pakai hanya fakta dari PROFIL. Jangan mengarang pengalaman, angka, atau metrik.\n- Jika pertanyaan butuh pengalaman yang tidak ada di profil, tulis bagian yang harus diisi Yoga dalam kurung siku [ ] dan pakai kalimat jujur: belum pernah mengerjakan langsung, tetapi paham konsepnya dan siap belajar.\n- 4 sampai 7 kalimat, natural untuk diucapkan, tanpa pengantar atau penutup.\n- Gaya bahasa: '+styleFor()+'.\n- Setelah jawaban, tambahkan satu baris yang diawali "Tips:" berisi satu saran singkat.\n\nPROFIL:\n'+PROFILE+'\n\nPERTANYAAN WAWANCARA:\n'+q}
+function aiErr(e){var c=e&&e.code;return {not_granted:'Izin Claude belum diberikan. Muat ulang halaman dan izinkan saat diminta.',sampling_disabled:'Claude tidak tersedia untuk akun ini.',rate_limited:'Terlalu sering atau batas pemakaian Claude tercapai. Coba lagi nanti.',session_expired:'Sesi berakhir. Masuk lagi ke claude.ai.',refused:'Claude menolak pertanyaan ini. Ubah pertanyaannya.',empty_completion:'Claude tidak menghasilkan jawaban. Ubah pertanyaannya.',prompt_too_large:'Pertanyaan terlalu panjang.'}[c]||'Gagal mendapat jawaban. Ketuk tombol untuk mencoba lagi.'}
+function runAI(sm,q){
+ if(aiCtl){try{aiCtl.abort()}catch(e){}}
+ var ctl=new AbortController();aiCtl=ctl;
+ var ask=$('askAI'),stop=$('stopAI'),box=$('aiBox');
+ if(ask)ask.disabled=true;if(stop)stop.hidden=false;
+ box.innerHTML='<div class="hint" id="aiStat" role="status">Claude sedang menyusun jawaban...</div><div class="ans" id="aiText" style="white-space:pre-wrap;margin-top:8px"></div><div class="hint" style="margin-top:8px">Contoh jawaban dari Claude untuk latihan. Ucapkan dengan kata-kata Anda sendiri dan hanya yang benar-benar Anda alami. Isi bagian [ ] dengan pengalaman nyata.</div>';
+ var txt=$('aiText'),st=$('aiStat');
+ sm(buildPrompt(q),{signal:ctl.signal,onText:function(u){txt.textContent=u.text;st.textContent='Jawaban dari Claude:'}}).then(function(r){aiAuto=true;st.textContent='Jawaban dari Claude:'+(r.truncated?' (terpotong, tanyakan lebih spesifik)':'')}).catch(function(e){
+  if(e&&e.code==='cancelled'){st.textContent='Dihentikan.'}else{st.textContent=aiErr(e)}
+  if(e&&e.text&&txt)txt.textContent=e.text}).then(function(){if(ask)ask.disabled=false;if(stop)stop.hidden=true;if(aiCtl===ctl)aiCtl=null})}
+function setupAI(q){
+ samplePromise.then(function(sm){
+  var row=$('aiRow');if(!row||$('q').value.trim()!==q)return;
+  if(sm){
+   row.innerHTML='<button class="act primary" id="askAI" type="button">Jawab dengan Claude</button><button class="act" id="stopAI" type="button" hidden>Berhenti</button>';
+   $('askAI').onclick=function(){runAI(sm,q)};
+   $('stopAI').onclick=function(){if(aiCtl)aiCtl.abort()};
+   if(aiAuto)runAI(sm,q);
+  }else{
+   var url='https://claude.ai/new?q='+encodeURIComponent(buildPrompt(q));
+   row.innerHTML='<a class="act primary" id="openClaude" href="'+url+'" target="_blank" rel="noopener noreferrer">Jawab dengan Claude (buka claude.ai)</a>';
+   $('aiBox').innerHTML='<div class="hint">Claude tidak tertanam di halaman ini. Tombol di atas membuka claude.ai dengan pertanyaan dan profil Anda sudah terisi. Kirim di sana untuk melihat jawabannya. Claude tertanam langsung di versi privat (link claude.ai/artifact).</div>'}
+ })}
 /* phone behaviour: short labels, tap and swipe */
 (function(){
  var mq=window.matchMedia?window.matchMedia('(max-width:640px)'):{matches:false};
