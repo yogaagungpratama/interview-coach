@@ -117,7 +117,7 @@ button.act,.seg button{min-height:44px;touch-action:manipulation}
  .q small{font-size:15px;margin-top:6px}
  .mainc .bar{margin-top:6px}
  .extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:26px;align-items:start}
- .extras>details:nth-of-type(2){grid-column:1/-1;order:-1}
+ .extras>#fitBox{grid-column:1/-1;order:-1}
  .extras>#notes{grid-column:1/-1;order:9}
  .extras>details.card,.extras>.card{margin-top:0!important}
  .res button{font-size:14.5px}
@@ -132,6 +132,10 @@ button.act,.seg button{min-height:44px;touch-action:manipulation}
 a.act{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;font:inherit;font-size:14px;min-height:44px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;text-align:center}
 .act.primary,a.act.primary{background:var(--violet);color:#14102a;border-color:var(--violet);font-weight:700}
 #aiBox .ans{font-size:16px;line-height:1.7;overflow-wrap:anywhere}
+
+#gKeyIn,#gModelSel{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;font-size:16px;min-height:44px}
+.fbrow{margin-top:10px}
+#fbText{width:100%;margin-top:8px;border:1px solid var(--line);background:#0b1224;color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;font-size:16px}
 </style>
 </head>
 <body>
@@ -153,6 +157,7 @@ a.act{border:1px solid var(--line);background:var(--card);color:var(--ink);paddi
   <div class="hint" id="vstat" role="status" aria-live="polite" style="min-height:22px;margin-bottom:8px">Ketuk Mic lalu ucapkan pertanyaan Anda.</div>
   <div class="res" id="res"></div>
   <div id="oom"></div>
+  <div id="aiPanel"></div>
  </div>
 
  <div class="card" id="card">
@@ -178,9 +183,24 @@ a.act{border:1px solid var(--line);background:var(--card);color:var(--ink);paddi
   <div class="bar" style="margin-top:8px"><button class="act" id="copySaved">Salin semua</button><button class="act" id="clearSaved">Hapus semua</button></div>
   <div class="hint" id="copyStat" role="status"></div>
  </details>
+
+ <details class="card" id="aiSettings" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">Pengaturan AI: Gemini (kunci milik Anda)</summary>
+  <div class="hint" style="margin:8px 0">Jawaban untuk pertanyaan di luar materi dibuat oleh Gemini memakai kunci API Anda sendiri. Kunci hanya disimpan di browser perangkat ini dan hanya dikirim ke Google. Jangan dipakai di komputer bersama. Buat kunci di Google AI Studio (aistudio.google.com/apikey). Jika bisa, batasi kunci ke alamat situs ini di Google Cloud.</div>
+  <label for="gKeyIn" class="hint">Kunci API Gemini</label>
+  <input id="gKeyIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tempel kunci di sini">
+  <label class="hint" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="gRemember" checked> Ingat di perangkat ini</label>
+  <label for="gModelSel" class="hint">Model</label>
+  <select id="gModelSel" aria-label="Model Gemini"></select>
+  <div class="bar" style="margin-top:8px"><button class="act primary" id="gSave" type="button">Simpan dan uji kunci</button><button class="act" id="gClear" type="button">Hapus kunci</button></div>
+  <div class="hint" id="gStat" role="status" style="min-height:20px"></div>
+  <div style="font-weight:700;margin-top:12px">Yang dipelajari AI</div>
+  <div class="hint">AI tidak dilatih ulang. Setiap menjawab, ia membaca materi yang paling relevan, profil Anda, dan riwayat jawaban yang Anda setujui atau koreksi. Makin banyak yang Anda simpan, makin sesuai jawabannya.</div>
+  <div class="bar" style="margin-top:8px"><button class="act" id="gHistCopy" type="button">Salin riwayat</button><button class="act" id="gHistClear" type="button">Hapus riwayat</button></div>
+  <div class="hint" id="gHistStat" role="status" style="min-height:20px"></div>
+ </details>
  <div class="hint" id="prog" style="margin-top:10px"></div>
 
- <details class="card" style="margin-top:14px" open><summary style="cursor:pointer;font-weight:700">Kecocokan Anda dengan lowongan Kredivo (IT Support Specialist - Infrastructure)</summary>
+ <details class="card" id="fitBox" style="margin-top:14px" open><summary style="cursor:pointer;font-weight:700">Kecocokan Anda dengan lowongan Kredivo (IT Support Specialist - Infrastructure)</summary>
   <p style="color:var(--muted);font-size:13.5px;margin:10px 0 6px"><b style="color:var(--ink)">Ringkasan:</b> latar belakang dan perangkat Anda cocok dengan inti lowongan (switch, access point, ticketing, troubleshooting, dokumentasi, pengalaman 2+ tahun). Yang perlu disiapkan: contoh nyata untuk asset tracking, optimasi Wi-Fi, change documentation, dan eskalasi ke L2.</p>
   <table style="width:100%;border-collapse:collapse;font-size:13.5px">
    <tr style="color:var(--muted);text-align:left"><th style="padding:6px">Syarat lowongan</th><th style="padding:6px">Status</th><th style="padding:6px">Kondisi Anda dan yang perlu disiapkan</th></tr>
@@ -247,7 +267,7 @@ a.act{border:1px solid var(--line);background:var(--card);color:var(--ink);paddi
   else extra.push(e)});
  var mk=function(tag,cls,items){var el=document.createElement(tag);el.className=cls;items.forEach(function(x){el.appendChild(x)});return el};
  var head=mk('div','top',top),cols=document.createElement('div');cols.className='cols';
- var rs=document.getElementById('res'),oo=document.getElementById('oom');var lead=[];if(oo)lead.push(oo);if(rs)lead.push(rs);main=lead.concat(main);
+ var rs=document.getElementById('res'),oo=document.getElementById('oom'),ap=document.getElementById('aiPanel');var lead=[];if(oo)lead.push(oo);if(ap)lead.push(ap);if(rs)lead.push(rs);main=lead.concat(main);
  cols.appendChild(mk('aside','side',side));cols.appendChild(mk('main','mainc',main));
  w.appendChild(head);w.appendChild(cols);w.appendChild(mk('div','extras',extra));
 })();
@@ -430,16 +450,16 @@ function renderSaved(){$('savedN').textContent=saved.length;var h='';saved.forEa
 function persistSaved(){try{localStorage.setItem('ic_saved',JSON.stringify(saved))}catch(e){}}
 function growQ(){var t=$('q');t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,220)+'px'}
 function showRes2(){
- growQ();var q=$('q').value.trim();$('res').innerHTML='';$('oom').innerHTML='';
+ growQ();var q=$('q').value.trim();$('res').innerHTML='';$('oom').innerHTML='';$('aiPanel').innerHTML='';
  if(!q)return;
  var sc=scoreCards(q),strong=sc.length&&((sc[0].sc>=2&&sc[0].ratio>=0.6)||(sc[0].ratio===1&&norm(q).filter(function(w){return STOP.indexOf(w)<0}).length<=2));
  sc.slice(0,4).forEach(function(x){var b=document.createElement('button');b.textContent=DATA[x.i].en+'  /  '+DATA[x.i].id;b.onclick=function(){goExact(x.i);shown=true;render();window.scrollTo(0,0)};$('res').appendChild(b)});
+ renderAIPanel(q,!strong);
  if(strong)return;
  var F=frameworkFor(q),h='<div class="oom"><h3>Di luar materi: '+esc(F.h)+'</h3><div class="hint">Ini kerangka jawaban, bukan jawaban jadi. Isi dengan pengalaman nyata Anda.</div><ol>';
  F.s.forEach(function(x){h+='<li>'+esc(x)+'</li>'});
- h+='</ol><div class="hint">'+esc(F.n)+'</div><div class="bar" style="margin-top:10px"><button class="act" id="saveQ">Simpan pertanyaan ini</button></div><div class="hint" id="saveStat" role="status"></div><div id="aiRow" class="bar" style="margin-top:10px"></div><div id="aiBox"></div></div>';
+ h+='</ol><div class="hint">'+esc(F.n)+'</div><div class="bar" style="margin-top:10px"><button class="act" id="saveQ">Simpan pertanyaan ini</button></div><div class="hint" id="saveStat" role="status"></div></div>';
  $('oom').innerHTML=h;
- setupAI(q);
  $('saveQ').onclick=function(){if(saved.indexOf(q)<0){saved.push(q);persistSaved();renderSaved()}$('saveStat').textContent='Tersimpan. Buka "Pertanyaan baru yang Anda simpan" di bawah untuk menyalinnya.'};
 }
 function showRes(){showRes2()}
@@ -453,8 +473,10 @@ $('copySaved').onclick=function(){var txt=saved.length?('Tolong buatkan jawaban 
 renderSaved();
 $('lang').addEventListener('click',function(){setVL(L==='en'?'en-US':'id-ID')});
 
-/* ---------- Claude answer for questions outside the material ---------- */
-var aiCtl=null, aiAuto=false;
+/* ---------- AI answers: Claude (private version) or Gemini (your own key) ---------- */
+var aiCtl=null, aiAuto=false, hist=[], gKey='', gModel='';
+try{hist=JSON.parse(localStorage.getItem('ic_hist')||'[]')}catch(e){hist=[]}
+try{gKey=localStorage.getItem('ic_gkey')||'';gModel=localStorage.getItem('ic_gmodel')||''}catch(e){}
 var samplePromise=(window.claude&&typeof window.claude.use==='function')?window.claude.use('sample').catch(function(){return null}):Promise.resolve(null);
 var PROFILE=[
  'Nama: Yoga Agung Pratama Putra, IT Support Engineer (jaringan, hardware, infrastruktur), Bekasi.',
@@ -466,39 +488,101 @@ var PROFILE=[
  'Target: posisi IT Support Specialist - Infrastructure di perusahaan fintech (switch, access point, firewall dasar, troubleshooting terstruktur, dokumentasi, ticketing, eskalasi ke L2, kadang kerja di luar jam).'
 ].join('\n');
 function styleFor(){return L==='en'?'English profesional':(L==='id'?'Bahasa Indonesia yang sopan dan profesional':'campuran Indonesia dan Inggris yang profesional: struktur kalimat Indonesia, istilah teknis dalam bahasa Inggris, tetap sopan memakai "saya"')}
-function buildPrompt(q){
- return 'Kamu pelatih wawancara kerja untuk Yoga. Tulis CONTOH jawaban latihan untuk pertanyaan di bawah, diucapkan orang pertama sebagai Yoga.\n\nAturan:\n- Pakai hanya fakta dari PROFIL. Jangan mengarang pengalaman, angka, atau metrik.\n- Jika pertanyaan butuh pengalaman yang tidak ada di profil, tulis bagian yang harus diisi Yoga dalam kurung siku [ ] dan pakai kalimat jujur: belum pernah mengerjakan langsung, tetapi paham konsepnya dan siap belajar.\n- 4 sampai 7 kalimat, natural untuk diucapkan, tanpa pengantar atau penutup.\n- Gaya bahasa: '+styleFor()+'.\n- Setelah jawaban, tambahkan satu baris yang diawali "Tips:" berisi satu saran singkat.\n\nPROFIL:\n'+PROFILE+'\n\nPERTANYAAN WAWANCARA:\n'+q}
+function ansOf(d){return L==='en'?d.e:(L==='id'?d.idn:d.jk)}
+function relCards(q,n){return scoreCards(q).slice(0,n).map(function(x){var d=DATA[x.i];return '- Pertanyaan: '+d.en+' / '+d.id+'\n  Jawaban yang sudah disiapkan Yoga: '+ansOf(d)})}
+function relHist(q,n){var tk=norm(q).filter(function(w){return STOP.indexOf(w)<0}),res=[];hist.forEach(function(h){var hk=norm(h.q),sc=0;tk.forEach(function(w){if(hk.indexOf(w)>-1)sc++});if(sc)res.push({h:h,sc:sc})});res.sort(function(a,b){return b.sc-a.sc});return res.slice(0,n).map(function(x){var h=x.h;return h.ok?('- Pertanyaan: '+h.q+'\n  Jawaban yang DISETUJUI Yoga: '+h.a):('- Pertanyaan: '+h.q+'\n  Jawaban sebelumnya kurang tepat. Koreksi Yoga: '+(h.fix||'(tanpa catatan)'))})}
+function buildPrompt(q,compact){
+ var cards=relCards(q,compact?2:4),hs=compact?[]:relHist(q,3);
+ return 'Kamu pelatih wawancara kerja untuk Yoga. Tulis CONTOH jawaban latihan untuk pertanyaan di bawah, diucapkan orang pertama sebagai Yoga.\n\nAturan:\n- Pakai hanya fakta dari PROFIL dan MATERI. Jangan mengarang pengalaman, angka, atau metrik.\n- Ikuti isi dan nada jawaban yang sudah disiapkan Yoga jika relevan, dan hormati koreksi Yoga.\n- Jika pertanyaan butuh pengalaman yang tidak ada di profil, tulis bagian yang harus diisi Yoga dalam kurung siku [ ] dan pakai kalimat jujur: belum pernah mengerjakan langsung, tetapi paham konsepnya dan siap belajar.\n- 4 sampai 7 kalimat, natural untuk diucapkan, tanpa pengantar atau penutup.\n- Gaya bahasa: '+styleFor()+'.\n- Setelah jawaban, tambahkan satu baris yang diawali "Tips:" berisi satu saran singkat.\n\nPROFIL:\n'+PROFILE+(cards.length?'\n\nMATERI RELEVAN:\n'+cards.join('\n'):'')+(hs.length?'\n\nRIWAYAT LATIHAN YOGA:\n'+hs.join('\n'):'')+'\n\nPERTANYAAN WAWANCARA:\n'+q}
+function persistHist(){try{localStorage.setItem('ic_hist',JSON.stringify(hist.slice(-40)))}catch(e){}}
+/* ---- Gemini ---- */
+function gErr(e){var st=e&&e.status,m=(e&&e.msg)||'';if(e&&e.name==='AbortError')return 'Dihentikan.';if(st===400&&/api key|API_KEY/i.test(m))return 'Kunci API tidak valid. Periksa kunci di pengaturan.';if(st===400)return 'Permintaan ditolak Gemini. '+m.slice(0,120);if(st===401||st===403)return 'Kunci tidak punya izin atau dibatasi untuk situs ini. Periksa pengaturan kunci di Google.';if(st===404)return 'Model tidak ditemukan. Pilih model lain di pengaturan.';if(st===429)return 'Kuota gratis habis atau terlalu sering. Tunggu sebentar lalu coba lagi.';if(st>=500)return 'Layanan Google sedang bermasalah. Coba lagi nanti.';return 'Gagal terhubung ke Google. Periksa koneksi internet Anda.'}
+function gJson(res){if(res.ok)return res.json();return res.json().catch(function(){return {}}).then(function(j){throw {status:res.status,msg:(j.error&&j.error.message)||''}})}
+function gModels(key){return fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',{headers:{'x-goog-api-key':key}}).then(gJson).then(function(j){return (j.models||[]).filter(function(m){return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1}).map(function(m){return m.name.replace('models/','')})})}
+function pickModel(list){var f=list.filter(function(n){return /flash/.test(n)&&!/lite|image|tts|live|exp|thinking|audio|embedding|8b/i.test(n)}).sort().reverse();return f[0]||list.filter(function(n){return /^gemini/.test(n)}).sort().reverse()[0]||list[0]||''}
+function gAsk(prompt,onText,signal){
+ var url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(gModel)+':streamGenerateContent?alt=sse';
+ return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gKey},signal:signal,body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.6,maxOutputTokens:1000}})}).then(function(res){
+  if(!res.ok)return res.json().catch(function(){return {}}).then(function(j){throw {status:res.status,msg:(j.error&&j.error.message)||''}});
+  var full='',buf='';
+  function eat(line){if(line.indexOf('data:')!==0)return;try{var j=JSON.parse(line.slice(5));var parts=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[];var t=parts.map(function(x){return x.text||''}).join('');if(t){full+=t;onText(full)}}catch(e){}}
+  if(!res.body||!res.body.getReader){return res.text().then(function(tx){tx.split('\n').forEach(eat);return full})}
+  var rd=res.body.getReader(),dec=new TextDecoder();
+  function pump(){return rd.read().then(function(r){if(r.done){buf.split('\n').forEach(eat);return full}buf+=dec.decode(r.value,{stream:true});var lines=buf.split('\n');buf=lines.pop();lines.forEach(eat);return pump()})}
+  return pump()})}
+/* ---- shared answer box ---- */
 function aiErr(e){var c=e&&e.code;return {not_granted:'Izin Claude belum diberikan. Muat ulang halaman dan izinkan saat diminta.',sampling_disabled:'Claude tidak tersedia untuk akun ini.',rate_limited:'Terlalu sering atau batas pemakaian Claude tercapai. Coba lagi nanti.',session_expired:'Sesi berakhir. Masuk lagi ke claude.ai.',refused:'Claude menolak pertanyaan ini. Ubah pertanyaannya.',empty_completion:'Claude tidak menghasilkan jawaban. Ubah pertanyaannya.',prompt_too_large:'Pertanyaan terlalu panjang.'}[c]||'Gagal mendapat jawaban. Ketuk tombol untuk mencoba lagi.'}
-function runAI(sm,q){
+function esc2(x){return String(x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function showFeedback(q,a){
+ var box=$('aiBox');if(!box||!a)return;
+ var d=document.createElement('div');d.className='fbrow';
+ d.innerHTML='<div class="hint">Jawaban ini membantu? Simpan supaya AI belajar dari pilihan Anda.</div><div class="bar" style="margin-top:6px"><button class="act" id="fbOk" type="button">Simpan sebagai jawaban bagus</button><button class="act" id="fbBad" type="button">Kurang tepat</button></div><div id="fbArea"></div>';
+ box.appendChild(d);
+ $('fbOk').onclick=function(){hist.push({q:q,a:a,ok:1});persistHist();$('fbArea').innerHTML='<div class="hint">Tersimpan di riwayat latihan ('+hist.length+').</div>'};
+ $('fbBad').onclick=function(){$('fbArea').innerHTML='<textarea id="fbText" rows="3" placeholder="Apa yang salah atau perlu diubah?"></textarea><div class="bar" style="margin-top:6px"><button class="act primary" id="fbSave" type="button">Simpan koreksi</button></div>';$('fbSave').onclick=function(){hist.push({q:q,a:a,ok:0,fix:$('fbText').value.trim()});persistHist();$('fbArea').innerHTML='<div class="hint">Koreksi tersimpan. AI akan membacanya untuk pertanyaan serupa.</div>'}}}
+function runAI(provider,sm,q){
  if(aiCtl){try{aiCtl.abort()}catch(e){}}
  var ctl=new AbortController();aiCtl=ctl;
- var ask=$('askAI'),stop=$('stopAI'),box=$('aiBox');
+ var ask=$('askAI'),stop=$('stopAI'),box=$('aiBox'),name=provider==='claude'?'Claude':'Gemini';
  if(ask)ask.disabled=true;if(stop)stop.hidden=false;
- box.innerHTML='<div class="hint" id="aiStat" role="status">Claude sedang menyusun jawaban...</div><div class="ans" id="aiText" style="white-space:pre-wrap;margin-top:8px"></div><div class="hint" style="margin-top:8px">Contoh jawaban dari Claude untuk latihan. Ucapkan dengan kata-kata Anda sendiri dan hanya yang benar-benar Anda alami. Isi bagian [ ] dengan pengalaman nyata.</div>';
- var txt=$('aiText'),st=$('aiStat');
- sm(buildPrompt(q),{signal:ctl.signal,onText:function(u){txt.textContent=u.text;st.textContent='Jawaban dari Claude:'}}).then(function(r){aiAuto=true;st.textContent='Jawaban dari Claude:'+(r.truncated?' (terpotong, tanyakan lebih spesifik)':'')}).catch(function(e){
-  if(e&&e.code==='cancelled'){st.textContent='Dihentikan.'}else{st.textContent=aiErr(e)}
-  if(e&&e.text&&txt)txt.textContent=e.text}).then(function(){if(ask)ask.disabled=false;if(stop)stop.hidden=true;if(aiCtl===ctl)aiCtl=null})}
-function setupAI(q){
+ box.innerHTML='<div class="hint" id="aiStat" role="status">'+name+' sedang menyusun jawaban...</div><div class="ans" id="aiText" style="white-space:pre-wrap;margin-top:8px"></div><div class="hint" style="margin-top:8px">Contoh jawaban dari '+name+' untuk latihan. Ucapkan dengan kata-kata Anda sendiri dan hanya yang benar-benar Anda alami. Isi bagian [ ] dengan pengalaman nyata.</div>';
+ var txt=$('aiText'),st=$('aiStat'),final='';
+ var prom=provider==='claude'?sm(buildPrompt(q),{signal:ctl.signal,onText:function(u){final=u.text;txt.textContent=u.text;st.textContent='Jawaban dari Claude:'}}).then(function(r){final=r.text;if(r.truncated)st.textContent='Jawaban dari Claude: (terpotong, tanyakan lebih spesifik)'}):gAsk(buildPrompt(q),function(t){final=t;txt.textContent=t;st.textContent='Jawaban dari Gemini:'},ctl.signal).then(function(t){final=t||final;if(!final)throw {status:0,msg:'kosong'}});
+ prom.then(function(){aiAuto=true;st.textContent='Jawaban dari '+name+':';showFeedback(q,final)}).catch(function(e){
+  st.textContent=provider==='claude'?(e&&e.code==='cancelled'?'Dihentikan.':aiErr(e)):gErr(e);
+  if(provider==='claude'&&e&&e.text&&txt)txt.textContent=e.text}).then(function(){if(ask)ask.disabled=false;if(stop)stop.hidden=true;if(aiCtl===ctl)aiCtl=null})}
+function renderAIPanel(q,oom){
+ var panel=$('aiPanel');panel.innerHTML='<div id="aiRow" class="bar" style="margin-top:6px"></div><div id="aiBox"></div>';
  samplePromise.then(function(sm){
   var row=$('aiRow');if(!row||$('q').value.trim()!==q)return;
   if(sm){
    row.innerHTML='<button class="act primary" id="askAI" type="button">Jawab dengan Claude</button><button class="act" id="stopAI" type="button" hidden>Berhenti</button>';
-   $('askAI').onclick=function(){runAI(sm,q)};
+   $('askAI').onclick=function(){runAI('claude',sm,q)};
    $('stopAI').onclick=function(){if(aiCtl)aiCtl.abort()};
-   if(aiAuto)runAI(sm,q);
+   if(aiAuto&&oom)runAI('claude',sm,q);
+  }else if(gKey&&gModel){
+   row.innerHTML='<button class="act primary" id="askAI" type="button">Jawab dengan Gemini</button><button class="act" id="stopAI" type="button" hidden>Berhenti</button>';
+   $('askAI').onclick=function(){runAI('gemini',null,q)};
+   $('stopAI').onclick=function(){if(aiCtl)aiCtl.abort()};
+   if(aiAuto&&oom)runAI('gemini',null,q);
   }else{
-   var url='https://claude.ai/new?q='+encodeURIComponent(buildPrompt(q));
-   row.innerHTML='<a class="act primary" id="openClaude" href="'+url+'" target="_blank" rel="noopener noreferrer">Jawab dengan Claude (buka claude.ai)</a>';
-   $('aiBox').innerHTML='<div class="hint">Claude tidak tertanam di halaman ini. Tombol di atas membuka claude.ai dengan pertanyaan dan profil Anda sudah terisi. Kirim di sana untuk melihat jawabannya. Claude tertanam langsung di versi privat (link claude.ai/artifact).</div>'}
+   var url='https://claude.ai/new?q='+encodeURIComponent(buildPrompt(q,true));
+   row.innerHTML='<button class="act primary" id="openSet" type="button">Pasang kunci Gemini</button><a class="act" id="openClaude" href="'+url+'" target="_blank" rel="noopener noreferrer">Buka di claude.ai</a>';
+   $('openSet').onclick=function(){var d=$('aiSettings');d.open=true;d.scrollIntoView({behavior:'smooth',block:'center'});$('gKeyIn').focus()};
+   $('aiBox').innerHTML='<div class="hint">AI belum dipasang di halaman ini. Pasang kunci Gemini milik Anda di pengaturan, atau buka claude.ai dengan pertanyaan dan profil Anda sudah terisi.</div>'}
  })}
+samplePromise.then(function(sm){if(sm&&$('aiSettings'))$('aiSettings').hidden=true});
+/* ---- settings panel ---- */
+function fillModels(list,sel){var s2=$('gModelSel');s2.innerHTML='';list.forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;s2.appendChild(o)});if(sel&&list.indexOf(sel)>-1)s2.value=sel}
+function refreshSettings(){
+ if(gKey){$('gKeyIn').value='';$('gKeyIn').placeholder='Kunci tersimpan (disembunyikan)';$('gStat').textContent='Kunci terpasang. Model: '+(gModel||'belum dipilih')+'.';if(gModel)fillModels([gModel],gModel)}
+ $('gHistStat').textContent='Riwayat latihan: '+hist.length+' jawaban tersimpan.'}
+$('gSave').onclick=function(){
+ var key=$('gKeyIn').value.trim()||gKey;if(!key){$('gStat').textContent='Tempel kunci API dulu.';return}
+ $('gStat').textContent='Menguji kunci...';$('gSave').disabled=true;
+ gModels(key).then(function(list){
+  if(!list.length)throw {status:404,msg:'tidak ada model'};
+  var pick=($('gModelSel').value&&list.indexOf($('gModelSel').value)>-1)?$('gModelSel').value:pickModel(list);
+  fillModels(list,pick);gKey=key;gModel=$('gModelSel').value;
+  if($('gRemember').checked){try{localStorage.setItem('ic_gkey',gKey);localStorage.setItem('ic_gmodel',gModel)}catch(e){}}
+  $('gKeyIn').value='';$('gStat').textContent='Kunci valid. Model dipakai: '+gModel+($('gRemember').checked?'. Tersimpan di perangkat ini.':'. Hanya untuk sesi ini.');
+ }).catch(function(e){$('gStat').textContent=gErr(e)}).then(function(){$('gSave').disabled=false})};
+$('gModelSel').onchange=function(){gModel=$('gModelSel').value;try{if(gKey&&$('gRemember').checked)localStorage.setItem('ic_gmodel',gModel)}catch(e){}$('gStat').textContent='Model dipakai: '+gModel+'.'};
+$('gClear').onclick=function(){gKey='';gModel='';try{localStorage.removeItem('ic_gkey');localStorage.removeItem('ic_gmodel')}catch(e){}$('gKeyIn').value='';$('gKeyIn').placeholder='Tempel kunci di sini';$('gModelSel').innerHTML='';$('gStat').textContent='Kunci dihapus dari perangkat ini.'};
+$('gHistClear').onclick=function(){hist=[];persistHist();$('gHistStat').textContent='Riwayat dihapus.'};
+$('gHistCopy').onclick=function(){
+ if(!hist.length){$('gHistStat').textContent='Belum ada riwayat.';return}
+ var txt='Riwayat latihan wawancara Yoga (untuk ditambahkan ke materi):\n'+hist.map(function(h,k){return (k+1)+'. '+h.q+'\n   '+(h.ok?'Disetujui: '+h.a:'Koreksi: '+(h.fix||'-')+'\n   Jawaban AI: '+h.a)}).join('\n');
+ function fb(){$('gHistStat').innerHTML='Salin otomatis gagal. Salin teks ini manual:<br><textarea readonly id="hcArea" rows="6" style="width:100%;margin-top:6px;background:#0b1224;color:#eef3ff;border:1px solid #26324f;border-radius:10px;padding:8px;font:inherit;font-size:14px"></textarea>';var ca=$('hcArea');ca.value=txt;ca.focus();ca.select()}
+ try{navigator.clipboard.writeText(txt).then(function(){$('gHistStat').textContent='Disalin. Kirim ke Claude untuk dimasukkan ke materi.'},fb)}catch(e){fb()}};
+refreshSettings();
 /* phone behaviour: short labels, tap and swipe */
 (function(){
  var mq=window.matchMedia?window.matchMedia('(max-width:640px)'):{matches:false};
  var act=$('show').parentElement;act.classList.add('actions');
  var hint=document.querySelector('#card .hint'),hintDesk=hint.innerHTML;
  var origRender=render;
- render=function(){origRender();$('res').style.display=$('oom').style.display=(M==='lookup')?'':'none';hint.innerHTML=mq.matches?'Jawab dengan suara dulu, lalu ketuk <b>Jawaban</b> atau ketuk area jawaban. Geser kiri atau kanan untuk pertanyaan lain.':hintDesk;if(mq.matches){$('show').textContent=shown?'Sembunyikan':'Jawaban';$('prev').textContent='\u2039';$('next').textContent='\u203a';$('rand').textContent='Acak';$('done').textContent=done[i]?'Lancar \u2713':'Lancar'}else{$('prev').textContent='Sebelumnya (P)';$('next').textContent='Berikutnya (N)';$('rand').textContent='Acak (R)';$('done').textContent='Sudah lancar (D)'}};
+ render=function(){origRender();$('res').style.display=$('oom').style.display=$('aiPanel').style.display=(M==='lookup')?'':'none';hint.innerHTML=mq.matches?'Jawab dengan suara dulu, lalu ketuk <b>Jawaban</b> atau ketuk area jawaban. Geser kiri atau kanan untuk pertanyaan lain.':hintDesk;if(mq.matches){$('show').textContent=shown?'Sembunyikan':'Jawaban';$('prev').textContent='\u2039';$('next').textContent='\u203a';$('rand').textContent='Acak';$('done').textContent=done[i]?'Lancar \u2713':'Lancar'}else{$('prev').textContent='Sebelumnya (P)';$('next').textContent='Berikutnya (N)';$('rand').textContent='Acak (R)';$('done').textContent='Sudah lancar (D)'}};
  try{mq.addEventListener('change',render)}catch(e){}
  var x0=0,y0=0,t0=0,card=$('card');
  card.addEventListener('touchstart',function(e){var t=e.changedTouches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
