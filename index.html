@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Interview Coach</title>
 <style>
 :root{--bg:#0b1020;--card:#121a30;--ink:#eef3ff;--muted:#93a3c3;--line:#26324f;--cyan:#63e9f5;--violet:#a68cff;--green:#6ee7a8;--amber:#f5b324}
@@ -33,6 +37,47 @@ input[type=search]{flex:1;min-width:180px;border:1px solid var(--line);backgroun
 .res{display:grid;gap:8px;margin-bottom:12px}
 .res button{text-align:left;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 12px;border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
 .res button:hover{border-color:var(--cyan)}
+
+/* ---- phone and tablet layout ---- */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;min-height:100dvh}
+.wrap{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+input[type=search]{font-size:16px}
+button.act,.seg button{min-height:44px;touch-action:manipulation}
+.q,.ans,.tip,.hint{overflow-wrap:anywhere}
+.tablewrap{overflow-x:auto;max-width:100%}
+#card{touch-action:pan-y}
+@media(min-width:900px){.wrap{max-width:860px}}
+@media(max-width:640px){
+ .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+ h1{font-size:19px}
+ .sub{font-size:12.5px}
+ .note{font-size:12px}
+ .q{font-size:clamp(16px,4.6vw,18px)}
+ .ans{font-size:clamp(15.5px,4.4vw,17px);line-height:1.7}
+ .card{padding:14px;border-radius:14px}
+ #lang,#mode,#cat2{display:flex;flex-wrap:wrap;gap:6px;border:0;overflow:visible;max-width:100%;width:100%}
+ .seg button{flex:1 1 auto;border:1px solid var(--line);border-radius:10px;white-space:normal;line-height:1.25;padding:8px 10px}
+ .seg button.on{border-color:var(--violet)}
+ .timer{margin-left:auto}
+ .bar{gap:8px}
+ .actions{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid!important;grid-template-columns:1.5fr .7fr .7fr .8fr 1.15fr;gap:6px;margin:0!important;padding:8px max(10px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#0b1020f2;border-top:1px solid var(--line);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+ .actions button.act{min-height:48px;padding:6px 4px;font-size:14px;font-weight:700;flex:none}
+ #show{background:var(--violet);color:#14102a;border-color:var(--violet)}
+ details table,details tbody,details tr,details td{display:block;width:100%!important}
+ details tr:first-child{display:none}
+ details tr{border-top:1px solid var(--line);padding:8px 0}
+ details td{border:0!important;padding:2px 4px!important;white-space:normal!important}
+ details td:nth-child(2){padding-bottom:0!important}
+ .keys{display:none}
+ .actions #show{order:1}.actions #prev{order:2}.actions #next{order:3}.actions #rand{order:4}.actions #done{order:5}
+ .sub{display:none}
+ .note{padding:7px 10px;margin-bottom:10px}
+ .bar{margin-bottom:8px}
+}
+@media(hover:none){.keys{display:none}}
+@media(max-width:360px){.actions button.act{font-size:13px}.q{font-size:15.5px}}
+@media(orientation:landscape) and (max-height:480px){.actions{position:static;display:flex!important;flex-wrap:wrap;background:none;border:0}.wrap{padding-bottom:40px}}
 </style>
 </head>
 <body>
@@ -259,6 +304,22 @@ document.addEventListener('keydown',function(e){var tag=(e.target.tagName||'').t
  else if(k==='m'){mic()}
  else if(k==='/'){e.preventDefault();M='lookup';$('lookupBox').style.display='block';render();$('q').focus()}});
 render();
+
+/* phone behaviour: short labels, tap and swipe */
+(function(){
+ var mq=window.matchMedia?window.matchMedia('(max-width:640px)'):{matches:false};
+ var act=$('show').parentElement;act.classList.add('actions');
+ var hint=document.querySelector('#card .hint'),hintDesk=hint.innerHTML;
+ var origRender=render;
+ render=function(){origRender();hint.innerHTML=mq.matches?'Jawab dengan suara dulu, lalu ketuk <b>Jawaban</b> atau ketuk area jawaban. Geser kiri atau kanan untuk pertanyaan lain.':hintDesk;if(mq.matches){$('show').textContent=shown?'Sembunyikan':'Jawaban';$('prev').textContent='\u2039';$('next').textContent='\u203a';$('rand').textContent='Acak';$('done').textContent=done[i]?'Lancar \u2713':'Lancar'}else{$('prev').textContent='Sebelumnya (P)';$('next').textContent='Berikutnya (N)';$('rand').textContent='Acak (R)';$('done').textContent='Sudah lancar (D)'}};
+ try{mq.addEventListener('change',render)}catch(e){}
+ var x0=0,y0=0,t0=0,card=$('card');
+ card.addEventListener('touchstart',function(e){var t=e.changedTouches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
+ card.addEventListener('touchend',function(e){var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){go(dx<0?i+1:i-1)}
+  else if(Math.abs(dx)<10&&Math.abs(dy)<10&&Date.now()-t0<400&&(e.target.id==='ans'||e.target.closest('#ans'))){shown=!shown;render()}},{passive:true});
+ render();
+})();
 </script>
 </body>
 </html>
